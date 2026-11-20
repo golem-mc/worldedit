@@ -8,6 +8,7 @@ run Go through it so you get that version:
 ```bash
 mise install
 mise exec -- go build ./...
+mise run dev                   # start a dev server with this checkout
 mise exec -- go test -race ./...
 ```
 
@@ -18,7 +19,7 @@ mise exec -- gofmt -l .        # must print nothing
 mise exec -- go vet ./...
 mise exec -- go mod tidy -diff
 mise exec -- go test -race ./... -count=1
-mise exec -- go build ./cmd/server
+mise run build
 ```
 
 CI runs the same checks on every pull request.

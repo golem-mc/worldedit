@@ -1,0 +1,7 @@
+{
+  "server": "v0.0.0-20261120102836-66f42d080407",
+  "plugins": [
+    ".."
+  ],
+  "updateCheck": false
+}

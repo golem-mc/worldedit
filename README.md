@@ -94,18 +94,11 @@ no releases. The launcher writes the plugin to `launcher.json`:
 
 The plugin needs golem at commit `146fccc` or newer.
 
-### As a ready-built server
+### Development server
 
-This repository also builds a standalone golem server with FastAsyncWorldEdit
-built in. You need [Go](https://go.dev/dl/) 1.27.4 or newer, or
-[mise](https://mise.jdx.dev/), which installs the version in `mise.toml`:
-
-```bash
-git clone https://github.com/golem-mc/worldedit.git
-cd worldedit
-go build -o worldedit-server ./cmd/server   # with mise: mise exec -- go build ...
-./worldedit-server --nogui
-```
+`mise run dev` starts a server in `dev/` with this checkout built in through
+`golem-launcher` (the golem version comes from `go.mod`). Its runtime files
+are git-ignored.
 
 ## Configuration
 
@@ -165,7 +158,7 @@ mise exec -- gofmt -l .
 mise exec -- go vet ./...
 mise exec -- go mod tidy -diff
 mise exec -- go test -race ./... -count=1
-mise exec -- go build ./cmd/server
+mise run build
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for commit conventions and the release

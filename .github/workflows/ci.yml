@@ -40,4 +40,4 @@ jobs:
           fi
       - run: mise exec -- go vet ./...
       - run: mise exec -- go mod tidy -diff
-      - run: mise exec -- go build ./cmd/server
+      - run: mise run build

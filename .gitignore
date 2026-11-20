@@ -1,6 +1,4 @@
 # Local builds and runs
-/worldedit-server
-/fawe-server
 *.exe
 go.work
 go.work.sum
@@ -16,3 +14,7 @@ whitelist.json
 banned-ips.json
 banned-players.json
 usercache.json
+
+# Dev server runtime files (dev/launcher.json is committed)
+/dev/*
+!/dev/launcher.json
