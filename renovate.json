@@ -64,8 +64,9 @@
         "github.com/golem-mc/**"
       ],
       "groupName": "golem-mc modules",
+      "automerge": true,
       "schedule": [
-        "at any time"
+        "* 0-5 * * *"
       ]
     }
   ],

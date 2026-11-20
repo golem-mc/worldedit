@@ -41,17 +41,5 @@ linters:
       - path: _test\.go$
         linters: [dupl]
 
-      # The duplication and the oversized functions main already had. Entries
-      # may only be removed: the code they name is fixed, then the entry goes.
-      # A new one is never added; share the code or split the function.
-      # Each dupl entry names the twin's file in text and the block's first
-      # line in source, so it holds while lines move and nothing else matches.
-      - path: ^internal/server/tests/commands/server_arg_parse_test\.go$
-        linters: [funlen]
-        text: "^Function 'TestArgumentParseErrors' "
-      - path: ^internal/server/tests/network/server_login_test\.go$
-        linters: [funlen]
-        text: "^Function 'TestPlayerJoins' "
-
 # Formatting is checked separately by gofmt (`mise run fmt:check`), so this
 # file deliberately configures no formatters.

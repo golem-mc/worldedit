@@ -33,7 +33,7 @@ fi
 # Server tests set their own -parallel because they mostly wait on game ticks.
 gotestsum --format pkgname-and-test-fails --format-hide-empty-pkg --jsonfile="$json" \
   --rerun-fails=2 --rerun-fails-max-failures=10 --rerun-fails-abort-on-data-race --rerun-fails-report="$report" \
-  --packages=./... -- -timeout 20m $count || status=$?
+  --packages=./... -- -race -timeout 20m $count || status=$?
 # Flaky tests are still bugs, so report reruns even if they passed.
 if [ -s "$report" ]; then
   printf '\nRerun after a failure:\n'

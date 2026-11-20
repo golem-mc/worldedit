@@ -30,8 +30,6 @@ budget=$((budget / $(wc -l <<<"$dirs")))
 for dir in $dirs; do
   names=$(awk -v d="$dir" '$1 == d { print $2 }' <<<"$tests" | paste -sd'|' -)
   [ -d "$dir" ] || continue
-  # A nested module (examples/) is not in this module's package list.
-  [ -f "$dir/go.mod" ] && continue
   go test -c -o "$bin/t" "./$dir"
   # A package left with no tests builds no binary.
   [ -x "$bin/t" ] || continue
