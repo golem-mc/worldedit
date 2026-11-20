@@ -397,7 +397,36 @@ func TestSetBiomeGenerateBiomeAndRegen(t *testing.T) {
 	outside := blockAt(w, 10, 66, 10)
 	env.Expect(env.Run(alice, "//set gold_block"), "affected")
 	w.SetBlockState(plugin.BlockPos{X: 10, Y: 66, Z: 10}, plugin.DefaultState(registry.BlockGoldBlock), plugin.UpdateAll)
+	chestPos := plugin.BlockPos{X: 10, Y: 66, Z: 11}
+	w.SetBlockState(chestPos, plugin.DefaultState(registry.BlockChest), plugin.UpdateAll)
+	be, ok := w.BlockEntity(chestPos)
+	if !ok {
+		t.Fatal("no chest block entity")
+	}
+	be.(plugin.Container).Inventory().SetItem(0, plugin.NewStack(registry.ItemDiamond, 3))
+	signPos := plugin.BlockPos{X: 11, Y: 66, Z: 10}
+	w.SetBlockState(signPos, plugin.DefaultState(registry.BlockOakSign), plugin.UpdateAll)
+	if sbe, ok := w.BlockEntity(signPos); ok {
+		sbe.(plugin.Sign).SetLines(true, [4]plugin.Text{plugin.Plain("kept")})
+	} else {
+		t.Fatal("no sign block entity")
+	}
+	outBiome := plugin.BlockPos{X: 14, Y: 66, Z: 14}
+	w.SetBiome(outBiome, registry.BiomeDesert)
 	env.Expect(env.Run(alice, "//regen"), "Region regenerated")
+	if got := w.Biome(outBiome).Name(); got != "minecraft:desert" {
+		t.Fatalf("biome outside the region after //regen = %s, want desert", got)
+	}
+	if sbe, ok := w.BlockEntity(signPos); !ok {
+		t.Fatal("sign outside the region lost its block entity")
+	} else if got := sbe.(plugin.Sign).Lines(true)[0].PlainString(); got != "kept" {
+		t.Fatalf("sign line after //regen = %q, want kept", got)
+	}
+	if be, ok := w.BlockEntity(chestPos); !ok {
+		t.Fatal("chest outside the region lost its block entity")
+	} else if n := be.(plugin.Container).Inventory().Count(registry.ItemDiamond); n != 3 {
+		t.Fatalf("chest holds %d diamonds after //regen, want 3", n)
+	}
 	if got := blockAt(w, 3, 66, 3); got != before {
 		t.Fatalf("(3,66,3) after //regen = %s, want %s", got, before)
 	}

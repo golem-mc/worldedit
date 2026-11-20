@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"math/rand/v2"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -791,8 +792,9 @@ func (r *Router) registerRegion() { //nolint:funlen // a command table reads bet
 			if err != nil {
 				return fmt.Errorf("make a region selection first")
 			}
-			regenerateRegion(ctx.World, reg)
-			ctx.WE.Msgs.Info(ctx.Sender, "Region regenerated.")
+			regenerateRegion(ctx.World, reg, func() {
+				ctx.WE.Msgs.Info(ctx.Sender, "Region regenerated.")
+			})
 			return nil
 		},
 	})
@@ -930,23 +932,83 @@ func absInt(x int) int {
 
 var _ registry.Block
 
-// regenerateRegion regenerates the selection from the world's seed. golem
-// regenerates whole chunks, so the blocks of a chunk that lie outside the
-// region are put back afterwards. A chunk that is not loaded is loaded first
-// and regenerated when it is ready.
-func regenerateRegion(w plugin.World, reg region.Region) {
+// regenerateRegion regenerates the selection from the world's seed and calls
+// done once every chunk is finished. golem regenerates whole chunks (blocks
+// and biomes), so what lies outside the region is put back afterwards. A chunk
+// that is not loaded is loaded first and regenerated when it is ready.
+func regenerateRegion(w plugin.World, reg region.Region, done func()) {
 	regen := func(cp plugin.ChunkPos) bool {
 		type saved struct {
 			pos plugin.BlockPos
 			st  plugin.BlockState
 		}
+		type savedBiome struct {
+			pos plugin.BlockPos
+			b   registry.Biome
+		}
 		var keep []saved
+		var biomes []savedBiome
+		// Block entities are not regenerated, but a chest's contents and a
+		// sign's text outside the region must survive the new terrain.
+		var restoreEntities []func()
+		if c, ok := w.Chunk(cp); ok {
+			for _, be := range c.BlockEntities() {
+				if reg.Contains(be.Pos()) {
+					continue
+				}
+				pos := be.Pos()
+				switch e := be.(type) {
+				case plugin.Container:
+					items := slices.Clone(e.Inventory().Contents())
+					restoreEntities = append(restoreEntities, func() {
+						if n, ok := w.BlockEntity(pos); ok {
+							if c, ok := n.(plugin.Container); ok {
+								c.Inventory().SetContents(items)
+							}
+						}
+					})
+				case plugin.Sign:
+					front, back := e.Lines(true), e.Lines(false)
+					restoreEntities = append(restoreEntities, func() {
+						if n, ok := w.BlockEntity(pos); ok {
+							if sg, ok := n.(plugin.Sign); ok {
+								sg.SetLines(true, front)
+								sg.SetLines(false, back)
+							}
+						}
+					})
+				}
+			}
+		}
 		for y := w.MinY(); y < w.MinY()+w.Height(); y++ {
 			for z := cp.Z << 4; z < cp.Z<<4+16; z++ {
 				for x := cp.X << 4; x < cp.X<<4+16; x++ {
 					p := plugin.BlockPos{X: x, Y: y, Z: z}
-					if !reg.Contains(p) {
-						keep = append(keep, saved{p, w.BlockState(p)})
+					if reg.Contains(p) {
+						continue
+					}
+					keep = append(keep, saved{p, w.BlockState(p)})
+				}
+			}
+		}
+		// A biome cell is kept unless a block of the region lies in it.
+		for cy := w.MinY(); cy < w.MinY()+w.Height(); cy += 4 {
+			for cz := cp.Z << 4; cz < cp.Z<<4+16; cz += 4 {
+				for cx := cp.X << 4; cx < cp.X<<4+16; cx += 4 {
+					inside := false
+					for dy := 0; dy < 4 && !inside; dy++ {
+						for dz := 0; dz < 4 && !inside; dz++ {
+							for dx := range 4 {
+								if reg.Contains(plugin.BlockPos{X: cx + dx, Y: cy + dy, Z: cz + dz}) {
+									inside = true
+									break
+								}
+							}
+						}
+					}
+					if !inside {
+						p := plugin.BlockPos{X: cx + 2, Y: cy + 2, Z: cz + 2}
+						biomes = append(biomes, savedBiome{p, w.Biome(p)})
 					}
 				}
 			}
@@ -955,18 +1017,40 @@ func regenerateRegion(w plugin.World, reg region.Region) {
 			return false
 		}
 		for _, k := range keep {
-			w.SetBlockState(k.pos, k.st, plugin.UpdateClients)
+			if w.BlockState(k.pos) != k.st {
+				w.SetBlockState(k.pos, k.st, plugin.UpdateClients)
+			}
+		}
+		for _, b := range biomes {
+			w.SetBiome(b.pos, b.b)
+		}
+		for _, f := range restoreEntities {
+			f()
 		}
 		return true
 	}
-	for _, cp := range reg.Chunks() {
+	chunks := reg.Chunks()
+	pending := len(chunks)
+	finish := func() {
+		pending--
+		if pending == 0 {
+			done()
+		}
+	}
+	if pending == 0 {
+		done()
+		return
+	}
+	for _, cp := range chunks {
 		if regen(cp) {
+			finish()
 			continue
 		}
 		w.LoadChunk(cp, true, func(c plugin.Chunk) {
 			if c != nil {
 				regen(cp)
 			}
+			finish()
 		})
 	}
 }
