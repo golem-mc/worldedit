@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/golem-mc/golem/plugin"
+	"github.com/golem-mc/golem/registry"
 	"github.com/golem-mc/worldedit"
 	"github.com/golem-mc/worldedit/block"
 	"github.com/golem-mc/worldedit/core"
@@ -373,4 +374,34 @@ func readmeRegisterAndListen(server plugin.Server) {
 func TestReadmeExamplesCompile(t *testing.T) {
 	_ = readmeUseAPI
 	_ = readmeRegisterAndListen
+}
+
+func TestSetBiomeGenerateBiomeAndRegen(t *testing.T) {
+	env := wetest.Start(t)
+	alice := env.Join("Alice", true)
+	w := env.Srv.Host().Overworld()
+
+	env.Expect(env.Run(alice, "//pos1 2,65,2"), "First position set")
+	env.Expect(env.Run(alice, "//pos2 5,67,5"), "Second position set")
+	env.Expect(env.Run(alice, "//setbiome desert"), "Biomes were changed in 16 columns")
+	if got := w.Biome(plugin.BlockPos{X: 3, Y: 66, Z: 3}).Name(); got != "minecraft:desert" {
+		t.Fatalf("biome after //setbiome = %s", got)
+	}
+
+	env.Expect(env.Run(alice, "//generatebiome -r plains y>0"), "Biomes were changed")
+	if got := w.Biome(plugin.BlockPos{X: 3, Y: 66, Z: 3}).Name(); got != "minecraft:plains" {
+		t.Fatalf("biome after //generatebiome = %s", got)
+	}
+
+	before := blockAt(w, 3, 66, 3)
+	outside := blockAt(w, 10, 66, 10)
+	env.Expect(env.Run(alice, "//set gold_block"), "affected")
+	w.SetBlockState(plugin.BlockPos{X: 10, Y: 66, Z: 10}, plugin.DefaultState(registry.BlockGoldBlock), plugin.UpdateAll)
+	env.Expect(env.Run(alice, "//regen"), "Region regenerated")
+	if got := blockAt(w, 3, 66, 3); got != before {
+		t.Fatalf("(3,66,3) after //regen = %s, want %s", got, before)
+	}
+	if got := blockAt(w, 10, 66, 10); got != "minecraft:gold_block" {
+		t.Fatalf("(10,66,10) outside the region = %s, want it kept (was %s)", got, outside)
+	}
 }

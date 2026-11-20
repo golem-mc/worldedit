@@ -791,7 +791,8 @@ func (r *Router) registerRegion() { //nolint:funlen // a command table reads bet
 			if err != nil {
 				return fmt.Errorf("make a region selection first")
 			}
-			ctx.WE.Msgs.Info(ctx.Sender, fmt.Sprintf("Selection spans %d chunk(s); live chunk regeneration is not exposed by golem's World API (use /snap & /restore with a world backup).", len(reg.Chunks())))
+			regenerateRegion(ctx.World, reg)
+			ctx.WE.Msgs.Info(ctx.Sender, "Region regenerated.")
 			return nil
 		},
 	})
@@ -928,3 +929,44 @@ func absInt(x int) int {
 }
 
 var _ registry.Block
+
+// regenerateRegion regenerates the selection from the world's seed. golem
+// regenerates whole chunks, so the blocks of a chunk that lie outside the
+// region are put back afterwards. A chunk that is not loaded is loaded first
+// and regenerated when it is ready.
+func regenerateRegion(w plugin.World, reg region.Region) {
+	regen := func(cp plugin.ChunkPos) bool {
+		type saved struct {
+			pos plugin.BlockPos
+			st  plugin.BlockState
+		}
+		var keep []saved
+		for y := w.MinY(); y < w.MinY()+w.Height(); y++ {
+			for z := cp.Z << 4; z < cp.Z<<4+16; z++ {
+				for x := cp.X << 4; x < cp.X<<4+16; x++ {
+					p := plugin.BlockPos{X: x, Y: y, Z: z}
+					if !reg.Contains(p) {
+						keep = append(keep, saved{p, w.BlockState(p)})
+					}
+				}
+			}
+		}
+		if !w.Regenerate(cp) {
+			return false
+		}
+		for _, k := range keep {
+			w.SetBlockState(k.pos, k.st, plugin.UpdateClients)
+		}
+		return true
+	}
+	for _, cp := range reg.Chunks() {
+		if regen(cp) {
+			continue
+		}
+		w.LoadChunk(cp, true, func(c plugin.Chunk) {
+			if c != nil {
+				regen(cp)
+			}
+		})
+	}
+}

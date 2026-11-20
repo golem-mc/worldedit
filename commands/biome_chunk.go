@@ -77,11 +77,35 @@ func (r *Router) registerBiomeAndChunk() {
 			if len(ctx.Args) < 1 {
 				return fmt.Errorf("usage: //setbiome [-p] <biome>")
 			}
-			bname := registry.Qualify(strings.ToLower(ctx.Args[0]))
-			if _, ok := registry.BiomeByName(bname); !ok {
-				return fmt.Errorf("unknown biome %q", ctx.Args[0])
+			biome, err := parseBiome(ctx.Args[0])
+			if err != nil {
+				return err
 			}
-			ctx.WE.Msgs.Info(ctx.Sender, fmt.Sprintf("Biome %s validated; live chunk biome mutation is not exposed by golem's World API (biomes are written during chunk generation).", bname))
+			w := ctx.World
+			if ctx.Flags['p'] {
+				// -p: the whole column at your position.
+				pos := placementOrigin(ctx)
+				for y := w.MinY(); y < w.MinY()+w.Height(); y += 4 {
+					w.SetBiome(plugin.BlockPos{X: pos.X, Y: y, Z: pos.Z}, biome)
+				}
+				ctx.WE.Msgs.Info(ctx.Sender, biomeChangedMsg(1))
+				return nil
+			}
+			reg, err := ctx.Session.Selection(w)
+			if err != nil {
+				return fmt.Errorf("make a region selection first (or pass -p)")
+			}
+			cols := map[[2]int]bool{}
+			cells := map[plugin.BlockPos]bool{}
+			reg.ForEach(func(p plugin.BlockPos) bool {
+				cols[[2]int{p.X, p.Z}] = true
+				if cell := (plugin.BlockPos{X: p.X >> 2, Y: p.Y >> 2, Z: p.Z >> 2}); !cells[cell] {
+					cells[cell] = true
+					w.SetBiome(p, biome)
+				}
+				return true
+			})
+			ctx.WE.Msgs.Info(ctx.Sender, biomeChangedMsg(len(cols)))
 			return nil
 		},
 	})
@@ -146,4 +170,17 @@ func (r *Router) registerBiomeAndChunk() {
 			return nil
 		},
 	})
+}
+
+func parseBiome(arg string) (registry.Biome, error) {
+	name := registry.Qualify(strings.ToLower(arg))
+	b, ok := registry.BiomeByName(name)
+	if !ok {
+		return 0, fmt.Errorf("unknown biome %q", arg)
+	}
+	return b, nil
+}
+
+func biomeChangedMsg(columns int) string {
+	return fmt.Sprintf("Biomes were changed in %d columns. You may have to rejoin your game (or close and reopen your world) to see a change.", columns)
 }

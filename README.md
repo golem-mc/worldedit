@@ -186,7 +186,6 @@ nodes work as they do on Paper, including
 
 ## Differences from FAWE
 
-- `//setbiome`, `//generatebiome` and `//regen` check their input but do not change the world yet.
 - `/cs` scripts are plain command lists with `$1`, `$2` arguments, not JavaScript.
 - No built-in WorldGuard, PlotSquared or Vault bridges; those plugins connect through the API below.
 

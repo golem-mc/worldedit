@@ -17,6 +17,7 @@ import (
 	"github.com/golem-mc/golem/plugin"
 	"github.com/golem-mc/worldedit/block"
 	"github.com/golem-mc/worldedit/expr"
+	"github.com/golem-mc/worldedit/region"
 	"github.com/golem-mc/worldedit/tools"
 )
 
@@ -250,34 +251,13 @@ func (r *Router) registerGeneration() { //nolint:funlen // a command table reads
 			if err != nil {
 				return err
 			}
-			rawCoords := ctx.Flags['r']
-			offsetOrigin := ctx.Flags['o']
-			centerCoords := ctx.Flags['c']
-			lo, hi := reg.Min(), reg.Max()
-			cx := float64(lo.X+hi.X) / 2.0
-			cy := float64(lo.Y+hi.Y) / 2.0
-			cz := float64(lo.Z+hi.Z) / 2.0
-			sx := max(1.0, float64(hi.X-lo.X)/2.0)
-			sy := max(1.0, float64(hi.Y-lo.Y)/2.0)
-			sz := max(1.0, float64(hi.Z-lo.Z)/2.0)
-			orig := placementOrigin(ctx)
+			coords := formulaCoords(ctx, reg)
 			timeout := time.Duration(max(50, ctx.WE.Config().LimitFor(ctx.Sender).MaxExpressionMS)) * time.Millisecond
 
 			es := ctx.WE.NewEditSession(ctx.World, ctx.Sender, ctx.RawLine)
 			reg.ForEach(func(p plugin.BlockPos) bool {
 				env := expr.NewEnv(timeout)
-				switch {
-				case rawCoords:
-					env.Vars["x"], env.Vars["y"], env.Vars["z"] = float64(p.X), float64(p.Y), float64(p.Z)
-				case offsetOrigin:
-					env.Vars["x"], env.Vars["y"], env.Vars["z"] = float64(p.X-orig.X), float64(p.Y-orig.Y), float64(p.Z-orig.Z)
-				case centerCoords:
-					env.Vars["x"], env.Vars["y"], env.Vars["z"] = float64(p.X)-cx, float64(p.Y)-cy, float64(p.Z)-cz
-				default:
-					env.Vars["x"] = (float64(p.X) - cx) / sx
-					env.Vars["y"] = (float64(p.Y) - cy) / sy
-					env.Vars["z"] = (float64(p.Z) - cz) / sz
-				}
+				env.Vars["x"], env.Vars["y"], env.Vars["z"] = coords(p)
 				env.Perlin = block.Perlin3D
 				env.Simplex = block.Simplex3D
 				env.Voronoi = block.Voronoi3D
@@ -301,7 +281,43 @@ func (r *Router) registerGeneration() { //nolint:funlen // a command table reads
 		Permission:  "worldedit.generation.shape.biome",
 		Description: "Sets biome according to a formula",
 		Run: func(ctx *CmdContext) error {
-			ctx.WE.Msgs.Info(ctx.Sender, "Live biome modification is not exposed by golem's World API (biomes are assigned at chunk generation time).")
+			reg, err := ctx.Session.Selection(ctx.World)
+			if err != nil {
+				return fmt.Errorf("make a region selection first")
+			}
+			if len(ctx.Args) < 2 {
+				return fmt.Errorf("usage: //generatebiome [-h] [-r|-o|-c] <biome> <expression>")
+			}
+			biome, err := parseBiome(ctx.Args[0])
+			if err != nil {
+				return err
+			}
+			prog, err := expr.Compile(strings.Join(ctx.Args[1:], " "))
+			if err != nil {
+				return err
+			}
+			coords := formulaCoords(ctx, reg)
+			timeout := time.Duration(max(50, ctx.WE.Config().LimitFor(ctx.Sender).MaxExpressionMS)) * time.Millisecond
+			cols := map[[2]int]bool{}
+			cells := map[plugin.BlockPos]bool{}
+			reg.ForEach(func(p plugin.BlockPos) bool {
+				env := expr.NewEnv(timeout)
+				env.Vars["x"], env.Vars["y"], env.Vars["z"] = coords(p)
+				env.Perlin = block.Perlin3D
+				env.Simplex = block.Simplex3D
+				env.Voronoi = block.Voronoi3D
+				env.RidgedMulti = block.RidgedMulti3D
+				if v, err := prog.Eval(env); err == nil && v > 0 {
+					cell := plugin.BlockPos{X: p.X >> 2, Y: p.Y >> 2, Z: p.Z >> 2}
+					if !cells[cell] {
+						cells[cell] = true
+						ctx.World.SetBiome(p, biome)
+					}
+					cols[[2]int{p.X, p.Z}] = true
+				}
+				return true
+			})
+			ctx.WE.Msgs.Info(ctx.Sender, biomeChangedMsg(len(cols)))
 			return nil
 		},
 	})
@@ -693,4 +709,29 @@ func checkMaxRadius(ctx *CmdContext, radius float64) error {
 		return fmt.Errorf("maximum radius allowed is %d", lim.MaxRadius)
 	}
 	return nil
+}
+
+// formulaCoords answers how //generate and //generatebiome turn a position
+// into the x, y, z of the expression: normalised to the selection by default,
+// -r raw, -o relative to the placement origin, -c relative to the centre.
+func formulaCoords(ctx *CmdContext, reg region.Region) func(p plugin.BlockPos) (x, y, z float64) {
+	lo, hi := reg.Min(), reg.Max()
+	cx := float64(lo.X+hi.X) / 2.0
+	cy := float64(lo.Y+hi.Y) / 2.0
+	cz := float64(lo.Z+hi.Z) / 2.0
+	sx := max(1.0, float64(hi.X-lo.X)/2.0)
+	sy := max(1.0, float64(hi.Y-lo.Y)/2.0)
+	sz := max(1.0, float64(hi.Z-lo.Z)/2.0)
+	orig := placementOrigin(ctx)
+	return func(p plugin.BlockPos) (float64, float64, float64) {
+		switch {
+		case ctx.Flags['r']:
+			return float64(p.X), float64(p.Y), float64(p.Z)
+		case ctx.Flags['o']:
+			return float64(p.X - orig.X), float64(p.Y - orig.Y), float64(p.Z - orig.Z)
+		case ctx.Flags['c']:
+			return float64(p.X) - cx, float64(p.Y) - cy, float64(p.Z) - cz
+		}
+		return (float64(p.X) - cx) / sx, (float64(p.Y) - cy) / sy, (float64(p.Z) - cz) / sz
+	}
 }
