@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('ci-{0}', github.ref) || format('ci-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+        with:
+          cache: true
+      - run: mise exec -- go test -race ./... -count=1
+
+  check:
+    name: Format, vet and tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v5
+        with:
+          cache: true
+      - name: gofmt
+        run: |
+          unformatted=$(mise exec -- gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "Not gofmt-formatted:"; echo "$unformatted"; exit 1
+          fi
+      - run: mise exec -- go vet ./...
+      - run: mise exec -- go mod tidy -diff
+      - run: mise exec -- go build ./cmd/server

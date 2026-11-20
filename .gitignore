@@ -1,0 +1,18 @@
+# Local builds and runs
+/worldedit-server
+/fawe-server
+*.exe
+go.work
+go.work.sum
+
+# Reference checkout and local server runtime files
+FastAsyncWorldEdit/
+plugins/
+world/
+server.properties
+eula.txt
+ops.json
+whitelist.json
+banned-ips.json
+banned-players.json
+usercache.json
