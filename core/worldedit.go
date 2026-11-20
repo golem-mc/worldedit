@@ -144,8 +144,8 @@ func Enable(s plugin.Server) (*WorldEdit, error) {
 	// Register WorldEdit CUI plugin messaging channel.
 	s.Messenger().Listen(CUIChannel, func(from plugin.Player, data []byte) {
 		msg := strings.TrimSpace(string(data))
-		if strings.HasPrefix(msg, "v|") {
-			ver, _ := strconv.Atoi(strings.TrimPrefix(msg, "v|"))
+		if after, ok := strings.CutPrefix(msg, "v|"); ok {
+			ver, _ := strconv.Atoi(after)
 			sess := we.Session(from)
 			sess.SetCUI(ver)
 			we.DispatchCUI(from, sess)

@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,9 +31,7 @@ func LoadMessages(dataDir string) *Messages {
 		if data, err := os.ReadFile(overridePath); err == nil {
 			var ov map[string]string
 			if json.Unmarshal(data, &ov) == nil {
-				for k, v := range ov {
-					m.strings[k] = v
-				}
+				maps.Copy(m.strings, ov)
 			}
 		}
 	}

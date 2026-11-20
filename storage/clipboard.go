@@ -225,7 +225,7 @@ func LoadClipboardFromDisk(path string) (*Clipboard, error) {
 		BlockEntities: make(map[plugin.BlockPos]nbt.Compound),
 		DiskPath:      path,
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		var st uint16
 		if err := binary.Read(r, binary.BigEndian, &st); err != nil {
 			return nil, err

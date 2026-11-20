@@ -116,7 +116,7 @@ func TestMasksAndPatterns(t *testing.T) {
 		t.Fatal(err)
 	}
 	seenStone, seenDirt := false, false
-	for i := 0; i < 64; i++ {
+	for i := range 64 {
 		st := mix.Apply(ext, plugin.BlockPos{X: i, Y: 0, Z: 0})
 		if st == stone {
 			seenStone = true

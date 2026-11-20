@@ -11,6 +11,7 @@ import (
 	"math/bits"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -99,9 +100,9 @@ func (r SnapshotRepo) FindAfter(target time.Time) (Snapshot, bool, error) {
 	if err != nil {
 		return Snapshot{}, false, err
 	}
-	for i := len(list) - 1; i >= 0; i-- {
-		if list[i].Time.After(target) {
-			return list[i], true, nil
+	for _, l := range slices.Backward(list) {
+		if l.Time.After(target) {
+			return l, true, nil
 		}
 	}
 	return Snapshot{}, false, nil
@@ -279,7 +280,7 @@ func ReadAnvilChunk(mca []byte, cx, cz int) (*AnvilChunk, error) {
 			bitsPer := max(4, bits.Len(uint(len(palette)-1)))
 			mask := uint64((1 << bitsPer) - 1)
 			perLong := 64 / bitsPer
-			for i := 0; i < 4096; i++ {
+			for i := range 4096 {
 				li := i / perLong
 				bi := (i % perLong) * bitsPer
 				if li < len(data) {

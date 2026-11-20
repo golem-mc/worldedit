@@ -156,8 +156,8 @@ func countBlockInRegionDir(dir string, target plugin.BlockState) (int64, int, er
 		if err != nil {
 			continue
 		}
-		for cz := 0; cz < 32; cz++ {
-			for cx := 0; cx < 32; cx++ {
+		for cz := range 32 {
+			for cx := range 32 {
 				ch, err := storage.ReadAnvilChunk(data, cx, cz)
 				if err != nil {
 					continue

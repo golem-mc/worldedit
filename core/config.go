@@ -701,7 +701,7 @@ func parseRemapRule(raw string, out map[string]map[string]string) {
 	if out[prop] == nil {
 		out[prop] = make(map[string]string)
 	}
-	for _, pair := range strings.Split(body, ",") {
+	for pair := range strings.SplitSeq(body, ",") {
 		from, to, ok := strings.Cut(pair, ":")
 		if !ok {
 			continue

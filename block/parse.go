@@ -128,7 +128,7 @@ func ParseState(input string, allowLegacy bool) (plugin.BlockState, error) {
 		propStr := s[bracket+1 : len(s)-1]
 		if strings.TrimSpace(propStr) != "" {
 			propMap = make(map[string]string)
-			for _, pair := range strings.Split(propStr, ",") {
+			for pair := range strings.SplitSeq(propStr, ",") {
 				k, v, ok := strings.Cut(pair, "=")
 				if !ok {
 					return 0, fmt.Errorf("invalid property %q in %q", pair, input)
