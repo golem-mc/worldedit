@@ -331,3 +331,46 @@ func TestDoubleSlashCommandsAreNative(t *testing.T) {
 		t.Fatal("console /set produced no output")
 	}
 }
+
+// The Go examples of the README's "For plugin developers" section. They only
+// need to compile; keep them in step with the README.
+
+func readmeUseAPI(server plugin.Server, player plugin.Player, world plugin.World) error {
+	we, ok := plugin.Service[worldedit.API](server)
+	if !ok {
+		return nil // WorldEdit is not installed
+	}
+	sel, err := we.Selection(player) // the player's current selection
+	if err != nil {
+		return err
+	}
+	es := we.NewEditSession(world, player, "myplugin")
+	es.SetRegion(sel, block.SinglePattern(world.BlockState(plugin.BlockPos{Y: 64})))
+	return es.Commit() // recorded in the player's /undo history
+}
+
+type readmeProtection struct{}
+
+func (readmeProtection) Name() string { return "myprotection" }
+
+func (readmeProtection) AllowedRegions(p plugin.Player, w plugin.World) []region.Region {
+	return []region.Region{
+		region.NewCuboid(plugin.BlockPos{X: 0, Y: 0, Z: 0}, plugin.BlockPos{X: 99, Y: 255, Z: 99}),
+	}
+}
+
+func readmeRegisterAndListen(server plugin.Server) {
+	if we, ok := plugin.Service[worldedit.API](server); ok {
+		we.RegisterRegionManager(readmeProtection{})
+	}
+	plugin.Listen(server, func(e *core.EditSessionEvent) {
+		if e.Stage == core.EditStageBefore {
+			e.SetCancelled(true) // refuse the edit
+		}
+	})
+}
+
+func TestReadmeExamplesCompile(t *testing.T) {
+	_ = readmeUseAPI
+	_ = readmeRegisterAndListen
+}
