@@ -16,7 +16,7 @@ import (
 	"github.com/golem-mc/worldedit/tools"
 )
 
-func (r *Router) registerRegion() {
+func (r *Router) registerRegion() { //nolint:funlen // a command table reads better whole
 	r.Add(CmdSpec{
 		Name:        "/set",
 		Suggest:     suggestPattern,

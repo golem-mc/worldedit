@@ -17,7 +17,7 @@ func (r *Router) registerBiomeAndChunk() {
 		Description: "Lists all available biomes",
 		Run: func(ctx *CmdContext) error {
 			var names []string
-			for i := registry.Biome(0); i < registry.BiomeCount; i++ {
+			for i := range registry.Biome(registry.BiomeCount) {
 				if n := i.Name(); n != "" {
 					names = append(names, strings.TrimPrefix(n, "minecraft:"))
 				}

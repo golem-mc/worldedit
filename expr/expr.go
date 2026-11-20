@@ -145,7 +145,7 @@ func lex(src string) ([]token, error) {
 		}
 		if c == '/' && i+1 < n && src[i+1] == '*' {
 			i += 2
-			for i+1 < n && !(src[i] == '*' && src[i+1] == '/') {
+			for i+1 < n && (src[i] != '*' || src[i+1] != '/') {
 				i++
 			}
 			i += 2

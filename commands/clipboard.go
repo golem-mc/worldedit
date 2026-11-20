@@ -19,7 +19,7 @@ import (
 
 func cbTransformIdentity() storage.ClipboardTransform { return storage.ClipboardTransform{} }
 
-func (r *Router) registerClipboard() {
+func (r *Router) registerClipboard() { //nolint:funlen // a command table reads better whole
 	r.Add(CmdSpec{
 		Name:        "/copy",
 		Aliases:     []string{"/cp", "/lazycopy"},

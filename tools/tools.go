@@ -4,6 +4,7 @@ package tools
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"strings"
 	"time"
@@ -335,9 +336,7 @@ func (t *DataCyclerTool) Secondary(ctx core.ToolContext) bool {
 		}
 	}
 	merged := make(map[string]string, len(curProps))
-	for k, v := range curProps {
-		merged[k] = v
-	}
+	maps.Copy(merged, curProps)
 	merged[prop] = nextVal
 	if id, ok := registry.FindState(bname, merged); ok {
 		es := ctx.WE.NewEditSession(ctx.World, ctx.Player, "/cycler")

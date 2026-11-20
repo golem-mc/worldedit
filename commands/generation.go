@@ -20,7 +20,7 @@ import (
 	"github.com/golem-mc/worldedit/tools"
 )
 
-func (r *Router) registerGeneration() {
+func (r *Router) registerGeneration() { //nolint:funlen // a command table reads better whole
 	makeCyl := func(hollow bool) func(*CmdContext) error {
 		return func(ctx *CmdContext) error {
 			if len(ctx.Args) < 2 {
@@ -154,7 +154,7 @@ func (r *Router) registerGeneration() {
 			}
 			origin := placementOrigin(ctx)
 			es := ctx.WE.NewEditSession(ctx.World, ctx.Sender, ctx.RawLine)
-			for dy := 0; dy < size; dy++ {
+			for dy := range size {
 				half := size - 1 - dy
 				for dz := -half; dz <= half; dz++ {
 					for dx := -half; dx <= half; dx++ {
@@ -199,7 +199,7 @@ func (r *Router) registerGeneration() {
 			hollow := ctx.Flags['h']
 			origin := placementOrigin(ctx)
 			es := ctx.WE.NewEditSession(ctx.World, ctx.Sender, ctx.RawLine)
-			for dy := 0; dy < height; dy++ {
+			for dy := range height {
 				frac := 1.0 - float64(dy)/float64(height)
 				crx, crz := rx*frac, rz*frac
 				irx, irz := int(math.Ceil(crx)), int(math.Ceil(crz))
@@ -365,10 +365,10 @@ func (r *Router) registerGeneration() {
 			origin := placementOrigin(ctx)
 			es := ctx.WE.NewEditSession(ctx.World, ctx.Sender, ctx.RawLine)
 			patches := max(1, size/3)
-			for i := 0; i < patches; i++ {
+			for range patches {
 				px := origin.X + rand.IntN(size*2+1) - size
 				pz := origin.Z + rand.IntN(size*2+1) - size
-				for j := 0; j < 6; j++ {
+				for range 6 {
 					x := px + rand.IntN(5) - 2
 					z := pz + rand.IntN(5) - 2
 					topY := ctx.World.HighestBlockY(x, z, plugin.WorldSurface)

@@ -2,6 +2,7 @@ package block
 
 import (
 	"fmt"
+	"maps"
 	"math"
 	"math/rand/v2"
 	"strconv"
@@ -23,10 +24,8 @@ func RotateStateY(st plugin.BlockState, deg int) plugin.BlockState {
 		return st
 	}
 	out := make(map[string]string, len(props))
-	for k, v := range props {
-		out[k] = v
-	}
-	for s := 0; s < steps; s++ {
+	maps.Copy(out, props)
+	for range steps {
 		out = rotatePropsCW90(out)
 	}
 	if id, ok := registry.FindState(name, out); ok {
@@ -52,9 +51,7 @@ func rotateDirCW90(dir string) string {
 
 func rotatePropsCW90(props map[string]string) map[string]string {
 	out := make(map[string]string, len(props))
-	for k, v := range props {
-		out[k] = v
-	}
+	maps.Copy(out, props)
 	if f, ok := props["facing"]; ok {
 		out["facing"] = rotateDirCW90(f)
 	}
@@ -116,9 +113,7 @@ func FlipState(st plugin.BlockState, axis string) plugin.BlockState {
 		return st
 	}
 	out := make(map[string]string, len(props))
-	for k, v := range props {
-		out[k] = v
-	}
+	maps.Copy(out, props)
 	switch strings.ToLower(axis) {
 	case "x":
 		if f, ok := props["facing"]; ok {
@@ -135,9 +130,10 @@ func FlipState(st plugin.BlockState, axis string) plugin.BlockState {
 			}
 		}
 		if h, ok := props["hinge"]; ok {
-			if h == "left" {
+			switch h {
+			case "left":
 				out["hinge"] = "right"
-			} else if h == "right" {
+			case "right":
 				out["hinge"] = "left"
 			}
 		}
@@ -161,9 +157,10 @@ func FlipState(st plugin.BlockState, axis string) plugin.BlockState {
 			}
 		}
 		if h, ok := props["hinge"]; ok {
-			if h == "left" {
+			switch h {
+			case "left":
 				out["hinge"] = "right"
-			} else if h == "right" {
+			case "right":
 				out["hinge"] = "left"
 			}
 		}

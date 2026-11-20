@@ -264,7 +264,7 @@ func (p *Polygon2D) contains2D(tx, tz int) bool {
 	}
 	inside := false
 	xold, zold := p.Points[n-1].X, p.Points[n-1].Z
-	for i := 0; i < n; i++ {
+	for i := range n {
 		xnew, znew := p.Points[i].X, p.Points[i].Z
 		if xnew == tx && znew == tz {
 			return true
@@ -638,7 +638,7 @@ func (c *ConvexPolyhedron) rebuild() {
 
 	// Construct half-space planes for all supporting triangles of the convex hull.
 	const eps = 1e-6
-	for i := 0; i < n; i++ {
+	for i := range n {
 		for j := i + 1; j < n; j++ {
 			for k := j + 1; k < n; k++ {
 				normal := vecCross(vecSub(pts[j], pts[i]), vecSub(pts[k], pts[i]))
@@ -655,7 +655,7 @@ func (c *ConvexPolyhedron) rebuild() {
 				}
 				// Check if all vertices lie on the inside (<= d + eps).
 				valid := true
-				for m := 0; m < n; m++ {
+				for m := range n {
 					if vecDot(normal, pts[m]) > d+1e-4 {
 						valid = false
 						break

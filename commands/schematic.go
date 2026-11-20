@@ -176,7 +176,7 @@ func (r *Router) registerSchematic() {
 				}
 				holder := &storage.ClipboardHolder{}
 				loaded := 0
-				for _, part := range strings.Split(strings.Join(args, ","), ",") {
+				for part := range strings.SplitSeq(strings.Join(args, ","), ",") {
 					part = strings.TrimSpace(part)
 					if part == "" {
 						continue

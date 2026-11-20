@@ -140,7 +140,7 @@ func ParseMask(input string, ctx ParseContext) (Mask, error) {
 	return parseSingleMask(s, ctx)
 }
 
-func parseSingleMask(s string, ctx ParseContext) (Mask, error) {
+func parseSingleMask(s string, ctx ParseContext) (Mask, error) { //nolint:funlen // one switch over the mask syntaxes reads better whole
 	if s == "" {
 		return nil, fmt.Errorf("empty mask clause")
 	}
@@ -233,8 +233,8 @@ func parseSingleMask(s string, ctx ParseContext) (Mask, error) {
 		}}, nil
 	}
 	// Biome mask: $biome
-	if strings.HasPrefix(s, "$") {
-		bname := registry.Qualify(strings.ToLower(strings.TrimPrefix(s, "$")))
+	if after, ok := strings.CutPrefix(s, "$"); ok {
+		bname := registry.Qualify(strings.ToLower(after))
 		target, ok := registry.BiomeByName(bname)
 		if !ok {
 			return nil, fmt.Errorf("unknown biome %q", s[1:])
