@@ -1,8 +1,18 @@
 [tools]
 go = "1.27.4"
 
+[tasks.setup]
+description = "Generate dev/launcher.json from the golem version in go.mod"
+hide = true
+run = """
+mkdir -p dev
+printf '{\\n  "server": "%s",\\n  "plugins": [".."],\\n  "updateCheck": false\\n}\\n' \\
+  "$(go list -m -f '{% raw %}{{.Version}}{% endraw %}' github.com/golem-mc/golem)" > dev/launcher.json
+"""
+
 [tasks.dev]
 description = "Run a golem server in dev/ with this checkout built in"
+depends = ["setup"]
 dir = "dev"
 run = [
   "go tool launcher -config launcher.json server \"$(go list -m -f '{% raw %}{{.Version}}{% endraw %}' github.com/golem-mc/golem)\"",
@@ -11,5 +21,6 @@ run = [
 
 [tasks.build]
 description = "Build the server with this checkout through the launcher"
+depends = ["setup"]
 dir = "dev"
 run = "go tool launcher -config launcher.json build"

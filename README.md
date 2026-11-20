@@ -76,18 +76,17 @@ Add the plugin with
 [`golem-launcher`](https://github.com/golem-mc/golem#installing-plugins):
 
 ```bash
-./golem-launcher plugin add github.com/golem-mc/worldedit@<version>
+./golem-launcher plugin add github.com/golem-mc/worldedit
 ./golem-launcher
 ```
 
-`<version>` is a release tag (e.g. `v0.1.0`), or a commit hash while there are
-no releases. The launcher writes the plugin to `launcher.json`:
+The launcher writes the plugin to `launcher.json`:
 
 ```json
 {
   "server": "<golem version>",
   "plugins": [
-    "github.com/golem-mc/worldedit@<version>"
+    "github.com/golem-mc/worldedit"
   ]
 }
 ```
