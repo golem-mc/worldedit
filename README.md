@@ -119,6 +119,9 @@ Several clipboards can be loaded at once with `//schem loadall` and `#clipboard`
 | `/snap`, `/restore` | World snapshots (Anvil backups) | `worldedit.snapshots.*` |
 | `/anvil <count\|distr\|set\|replace\|clear\|deletealloldregions>` | Region file tools | `worldedit.anvil.*` |
 | `/biomelist`, `/biomeinfo`, `/chunkinfo`, `/listchunks`, `/delchunks` | Biome and chunk information | `worldedit.biome.*`, `worldedit.*chunks` |
+| `//setbiome [-p] <biome>` | Set the biome of the selection (`-p`: the column you stand in) | `worldedit.biome.set` |
+| `//generatebiome <biome> <expression>`, `//genbiome`, `//gb` | Set a biome where the formula is positive (`-r`, `-o`, `-c` pick the coordinates) | `worldedit.generation.shape.biome` |
+| `//regen` | Regenerate the selection from the world seed | `worldedit.regen` |
 | `/we <version\|reload\|threads\|cui\|tz\|help>` (`/fawe`) | Plugin administration | `worldedit.reload`, `fawe.reload` |
 | `//limit`, `//timeout`, `//fast`, `//perf`, `//reorder`, `//world`, `//wea` | Per-player settings | `worldedit.*`, `fawe.admin` |
 
