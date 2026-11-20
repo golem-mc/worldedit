@@ -9,6 +9,7 @@ versions:
 ```bash
 mise install
 mise run build
+mise run dev                   # start a dev server with this checkout
 ```
 
 ## Before you open a pull request
@@ -18,6 +19,7 @@ Run the cheap checks:
 ```bash
 mise run fmt && mise run fix && mise run tidy
 mise run build
+mise run dev                   # start a dev server with this checkout
 mise run lint
 ```
 
