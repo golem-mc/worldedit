@@ -116,8 +116,12 @@ func (r *Router) Add(spec CmdSpec) {
 				r.byName[bare] = &sp
 			}
 		}
-		if !strings.ContainsAny(ln, " :/\\\t\n\r") {
+		// golem allows one leading slash, so "/set" is typed as "//set".
+		if body := strings.TrimPrefix(ln, "/"); body != "" && !strings.ContainsAny(body, " :/\\\t\n\r") {
 			singleNames = append(singleNames, ln)
+			if strings.HasPrefix(ln, "/") && r.WE.Config().WorldEdit.NoDoubleSlash {
+				singleNames = append(singleNames, body)
+			}
 		}
 	}
 
@@ -186,24 +190,27 @@ func (r *Router) Add(spec CmdSpec) {
 	}
 }
 
+// installCommandInterceptors handles the "fawe:" and "fastasyncworldedit:"
+// namespaces, which golem does not register: it names a command only as
+// "worldedit:name".
 func (r *Router) installCommandInterceptors() {
-	// Intercept player double-slash commands (e.g. "//set stone" arrives as "/set stone")
 	plugin.Listen(r.WE.Server, func(e *plugin.PlayerCommandEvent) {
-		if r.tryIntercept(e.Player, e.Command) {
+		if hasFAWENamespace(e.Command) && r.tryIntercept(e.Player, e.Command) {
 			e.SetCancelled(true)
 		}
 	}, plugin.ListenOptions{Priority: plugin.Low})
 
-	// Intercept console commands starting with "/" (e.g. "/set", "//set", "/we reload")
 	plugin.Listen(r.WE.Server, func(e *plugin.ServerCommandEvent) {
 		cmd := strings.TrimSpace(e.Command)
-		if strings.HasPrefix(cmd, "//") {
-			cmd = cmd[1:] // normalize "//set" -> "/set"
-		}
-		if r.tryIntercept(r.WE.Server.Console(), cmd) {
+		if hasFAWENamespace(cmd) && r.tryIntercept(r.WE.Server.Console(), cmd) {
 			e.SetCancelled(true)
 		}
 	}, plugin.ListenOptions{Priority: plugin.Low})
+}
+
+func hasFAWENamespace(line string) bool {
+	lower := strings.ToLower(strings.TrimLeft(strings.TrimSpace(line), "/"))
+	return strings.HasPrefix(lower, "fawe:") || strings.HasPrefix(lower, "fastasyncworldedit:")
 }
 
 func (r *Router) tryIntercept(sender plugin.CommandSender, line string) bool {
@@ -213,9 +220,11 @@ func (r *Router) tryIntercept(sender plugin.CommandSender, line string) bool {
 	}
 	// Strip namespace prefix "worldedit:" or "fastasyncworldedit:" if present
 	lower := strings.ToLower(trimmed)
+	namespaced := false
 	for _, ns := range []string{"worldedit:", "fastasyncworldedit:", "fawe:"} {
 		if strings.HasPrefix(lower, ns) {
 			trimmed = trimmed[len(ns):]
+			namespaced = true
 			break
 		}
 	}
@@ -225,8 +234,9 @@ func (r *Router) tryIntercept(sender plugin.CommandSender, line string) bool {
 		return false
 	}
 	cmdName := strings.ToLower(fields[0])
-	// Only intercept commands starting with "/" (double-slash commands) or bare no-double-slash commands not in Brigadier
-	if !strings.HasPrefix(cmdName, "/") && r.registered[cmdName] {
+	// A single-slash command golem has registered runs natively, unless a namespace the
+	// server does not know named it.
+	if !namespaced && !strings.HasPrefix(cmdName, "/") && r.registered[cmdName] {
 		return false
 	}
 	sp, ok := r.byName[cmdName]
@@ -762,4 +772,36 @@ func (r *Router) printHelp(ctx *CmdContext, args []string) {
 	for _, sp := range list[start:end] {
 		ctx.WE.Msgs.Info(ctx.Sender, fmt.Sprintf("/%s - %s", sp.Name, sp.Description))
 	}
+}
+
+// suggestPattern completes the last word of a pattern with block names. A
+// leading "!" or "^", "%" weights and "," lists are kept in front of the
+// completed name.
+func suggestPattern(_ *plugin.CommandContext, partial string) []string {
+	word := partial
+	if i := strings.LastIndexByte(word, ' '); i >= 0 {
+		word = word[i+1:]
+	}
+	head := ""
+	if i := strings.LastIndexAny(word, ",%"); i >= 0 {
+		head, word = word[:i+1], word[i+1:]
+	}
+	for len(word) > 0 && (word[0] == '!' || word[0] == '^') {
+		head, word = head+word[:1], word[1:]
+	}
+	if strings.ContainsAny(word, "[{") {
+		return nil
+	}
+	lower := strings.ToLower(word)
+	var out []string
+	for _, name := range registry.BlockNames {
+		short := strings.TrimPrefix(name, "minecraft:")
+		if strings.HasPrefix(short, lower) || strings.HasPrefix(name, lower) {
+			out = append(out, head+name)
+			if len(out) >= 100 {
+				break
+			}
+		}
+	}
+	return out
 }

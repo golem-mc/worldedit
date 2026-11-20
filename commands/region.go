@@ -19,6 +19,7 @@ import (
 func (r *Router) registerRegion() {
 	r.Add(CmdSpec{
 		Name:        "/set",
+		Suggest:     suggestPattern,
 		Permission:  "worldedit.region.set",
 		Description: "Sets all the blocks in the region",
 		Run: func(ctx *CmdContext) error {
@@ -110,6 +111,7 @@ func (r *Router) registerRegion() {
 
 	r.Add(CmdSpec{
 		Name:        "/walls",
+		Suggest:     suggestPattern,
 		Permission:  "worldedit.region.walls",
 		Description: "Build the four sides of the selection",
 		Run: func(ctx *CmdContext) error {
@@ -138,6 +140,7 @@ func (r *Router) registerRegion() {
 
 	r.Add(CmdSpec{
 		Name:        "/faces",
+		Suggest:     suggestPattern,
 		Aliases:     []string{"/outline"},
 		Permission:  "worldedit.region.faces",
 		Description: "Build the walls, ceiling, and floor of a selection",
@@ -167,6 +170,7 @@ func (r *Router) registerRegion() {
 
 	r.Add(CmdSpec{
 		Name:        "/overlay",
+		Suggest:     suggestPattern,
 		Aliases:     []string{"/lay"},
 		Permission:  "worldedit.region.overlay",
 		Description: "Set a block on top of blocks in the region",
@@ -213,6 +217,7 @@ func (r *Router) registerRegion() {
 
 	r.Add(CmdSpec{
 		Name:        "/center",
+		Suggest:     suggestPattern,
 		Aliases:     []string{"/middle"},
 		Permission:  "worldedit.region.center",
 		Description: "Set the center block(s) of the selection",

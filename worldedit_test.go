@@ -295,3 +295,39 @@ func TestSelectorsExpandUtilityAndAnvil(t *testing.T) {
 		t.Fatalf("after //drain, (31,65,31) = %s, want air", got)
 	}
 }
+
+func TestDoubleSlashCommandsAreNative(t *testing.T) {
+	env := wetest.Start(t)
+	alice := env.Join("Alice", true)
+	found := false
+	for _, c := range env.Srv.Host().Commands().All() {
+		if c.Name == "/set" && c.Plugin == "worldedit" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal(`the command tree has no "/set"`)
+	}
+	env.Expect(env.Run(alice, "//pos1 2,65,2"), "First position set")
+	env.Expect(env.Run(alice, "//pos2 3,65,3"), "Second position set")
+	n := 0
+	for _, m := range env.Run(alice, "//set stone") {
+		if strings.Contains(m, "blocks affected") {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Fatalf("//set ran %d times", n)
+	}
+	env.Expect(env.Run(alice, "/worldedit:/set dirt"), "4 blocks affected")
+	env.Expect(env.Run(alice, "/fawe:/set glass"), "4 blocks affected")
+	if got := blockAt(env.Srv.Host().Overworld(), 2, 65, 2); got != "minecraft:glass" {
+		t.Fatalf("got %s", got)
+	}
+	if out := env.Console("//set stone"); len(out) == 0 {
+		t.Fatal("console //set produced no output")
+	}
+	if out := env.Console("/set stone"); len(out) == 0 {
+		t.Fatal("console /set produced no output")
+	}
+}
