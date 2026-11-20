@@ -13,7 +13,7 @@ import (
 	"github.com/golem-mc/worldedit/tools"
 )
 
-func (r *Router) registerSelection() {
+func (r *Router) registerSelection() { //nolint:funlen // a command table reads better whole
 	r.Add(CmdSpec{
 		Name:        "/pos1",
 		Aliases:     []string{"/1"},

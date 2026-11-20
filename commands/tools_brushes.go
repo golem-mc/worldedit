@@ -13,7 +13,7 @@ import (
 	"github.com/golem-mc/worldedit/tools"
 )
 
-func (r *Router) registerToolsAndBrushes() {
+func (r *Router) registerToolsAndBrushes() { //nolint:funlen // a command table reads better whole
 	// --- Super-Pickaxe ---
 	r.Add(CmdSpec{
 		Name:        "/",
@@ -659,7 +659,7 @@ func buildBrushSettings(ctx *CmdContext, sub string, args []string) (*tools.Brus
 		sz := parseInt(0, 5)
 		var layers []block.Pattern
 		if len(args) >= 2 {
-			for _, part := range strings.Split(args[1], ",") {
+			for part := range strings.SplitSeq(args[1], ",") {
 				if p, err := block.ParsePattern(part, pctx); err == nil {
 					layers = append(layers, p)
 				}

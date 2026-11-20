@@ -105,7 +105,7 @@ func splitWeight(s string) (float64, string) {
 	return 1.0, s
 }
 
-func parseSinglePattern(s string, ctx ParseContext) (Pattern, error) {
+func parseSinglePattern(s string, ctx ParseContext) (Pattern, error) { //nolint:funlen // one switch over the pattern syntaxes reads better whole
 	if s == "" {
 		return nil, fmt.Errorf("empty pattern clause")
 	}
@@ -246,10 +246,7 @@ func parseSinglePattern(s string, ctx ParseContext) (Pattern, error) {
 				default:
 					v = Simplex3D(seed, float64(pos.X), float64(pos.Y), float64(pos.Z), freq, 2)
 				}
-				idx := int(math.Floor(v * float64(len(pats))))
-				if idx < 0 {
-					idx = 0
-				}
+				idx := max(int(math.Floor(v*float64(len(pats)))), 0)
 				if idx >= len(pats) {
 					idx = len(pats) - 1
 				}

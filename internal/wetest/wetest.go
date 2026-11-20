@@ -55,7 +55,7 @@ func (env *Env) Run(c *Client, line string) []string {
 	if !strings.HasPrefix(line, "/") {
 		line = "/" + line
 	}
-	c.Player.Run(line)
+	c.Run(line)
 	return c.Messages(5)
 }
 

@@ -2,27 +2,41 @@
 
 ## Setup
 
-Go is pinned in `mise.toml`. With [mise](https://mise.jdx.dev/) installed,
-run Go through it so you get that version:
+The toolchain (Go, golangci-lint, gotestsum) is pinned in `mise.toml`. With
+[mise](https://mise.jdx.dev/) installed, run Go through it so you get those
+versions:
 
 ```bash
 mise install
-mise exec -- go build ./...
+mise run build
 mise run dev                   # start a dev server with this checkout
-mise exec -- go test -race ./...
 ```
 
 ## Before you open a pull request
 
+Run the cheap checks:
+
 ```bash
-mise exec -- gofmt -l .        # must print nothing
-mise exec -- go vet ./...
-mise exec -- go mod tidy -diff
-mise exec -- go test -race ./... -count=1
+mise run fmt && mise run fix && mise run tidy
 mise run build
+mise run dev                   # start a dev server with this checkout
+mise run lint
 ```
 
-CI runs the same checks on every pull request.
+`fmt:check`, `fix:check` and `tidy:check` only verify, which is what CI runs.
+
+For tests, run the ones you added or changed, then repeat them to catch flakes:
+
+```bash
+mise exec -- go test ./core -run 'TestA|TestB'
+mise run test:changed
+```
+
+There is no need to run the whole suite locally (`mise run test` and
+`mise run check` do); CI runs it on every pull request, alongside the Build,
+Lint, Fix, Format and Tidy jobs. Tests have to be cheap, because every pull
+request waits for the whole suite. A test that fails only on a busy machine is
+a flaky test: fix it rather than retrying it.
 
 ## Commit messages and releases
 

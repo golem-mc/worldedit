@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -58,10 +59,8 @@ func FindFormat(name string) (FormatInfo, bool) {
 		if strings.ToLower(string(f.Format)) == q {
 			return f, true
 		}
-		for _, a := range f.Aliases {
-			if a == q {
-				return f, true
-			}
+		if slices.Contains(f.Aliases, q) {
+			return f, true
 		}
 	}
 	return FormatInfo{}, false
@@ -385,7 +384,7 @@ func readSpongeV3(root nbt.Compound) (*Clipboard, error) {
 
 	blocksTag, ok := nbt.Get[nbt.Compound](schem, "Blocks")
 	if !ok {
-		return nil, fmt.Errorf("Sponge v3 schematic missing Blocks compound")
+		return nil, fmt.Errorf("sponge v3 schematic missing Blocks compound")
 	}
 	palTag, _ := nbt.Get[nbt.Compound](blocksTag, "Palette")
 	idToState := parseStringPalette(palTag)
@@ -395,9 +394,9 @@ func readSpongeV3(root nbt.Compound) (*Clipboard, error) {
 		return nil, err
 	}
 	idx := 0
-	for y := 0; y < height; y++ {
-		for z := 0; z < length; z++ {
-			for x := 0; x < width; x++ {
+	for y := range height {
+		for z := range length {
+			for x := range width {
 				if idx < len(indices) {
 					cb.SetRel(x, y, z, idToState[indices[idx]])
 				}
@@ -433,9 +432,9 @@ func readSpongeV3(root nbt.Compound) (*Clipboard, error) {
 		bdata, _ := nbt.Get[nbt.ByteArray](biomesTag, "Data")
 		if bidx, err := readVarInts(bdata, width*height*length); err == nil {
 			i := 0
-			for y := 0; y < height; y++ {
-				for z := 0; z < length; z++ {
-					for x := 0; x < width; x++ {
+			for y := range height {
+				for z := range length {
+					for x := range width {
 						if i < len(bidx) {
 							cb.SetRelBiome(x, y, z, idToBiome[bidx[i]])
 						}
@@ -568,9 +567,9 @@ func readSpongeV1OrV2(root nbt.Compound, ver int) (*Clipboard, error) {
 		return nil, err
 	}
 	idx := 0
-	for y := 0; y < height; y++ {
-		for z := 0; z < length; z++ {
-			for x := 0; x < width; x++ {
+	for y := range height {
+		for z := range length {
+			for x := range width {
 				if idx < len(indices) {
 					cb.SetRel(x, y, z, idToState[indices[idx]])
 				}
@@ -631,9 +630,9 @@ func readMCEdit(root nbt.Compound) (*Clipboard, error) {
 	blocks, _ := nbt.Get[nbt.ByteArray](root, "Blocks")
 	addBlocks, _ := nbt.Get[nbt.ByteArray](root, "AddBlocks")
 	dataBytes, _ := nbt.Get[nbt.ByteArray](root, "Data")
-	for y := 0; y < height; y++ {
-		for z := 0; z < length; z++ {
-			for x := 0; x < width; x++ {
+	for y := range height {
+		for z := range length {
+			for x := range width {
 				idx := (y*length+z)*width + x
 				if idx >= len(blocks) {
 					continue

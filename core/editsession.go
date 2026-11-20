@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"time"
 
 	"github.com/golem-mc/golem/nbt"
@@ -363,8 +364,8 @@ func (we *WorldEdit) UndoChangeSet(w plugin.World, cs *storage.ChangeSet, allowe
 	}
 	flags := plugin.UpdateClients | plugin.UpdateKnownShape | plugin.UpdateSkipOnPlace | plugin.UpdateSuppressDrops
 	var count int64
-	for i := len(chs) - 1; i >= 0; i-- {
-		ch := chs[i]
+	for _, ch := range slices.Backward(chs) {
+
 		if len(allowed) > 0 && !posInRegions(ch.Pos, allowed) {
 			continue
 		}
@@ -489,7 +490,7 @@ func ApplyBlockEntityNBT(w plugin.World, pos plugin.BlockPos, comp nbt.Compound)
 	case plugin.Sign:
 		if lst, ok := nbt.Get[nbt.List](comp, "front_lines"); ok && len(lst.Items) == 4 {
 			var lines [4]plugin.Text
-			for i := 0; i < 4; i++ {
+			for i := range 4 {
 				if s, ok := lst.Items[i].(nbt.String); ok {
 					lines[i] = plugin.Plain(string(s))
 				}
@@ -498,7 +499,7 @@ func ApplyBlockEntityNBT(w plugin.World, pos plugin.BlockPos, comp nbt.Compound)
 		}
 		if lst, ok := nbt.Get[nbt.List](comp, "back_lines"); ok && len(lst.Items) == 4 {
 			var lines [4]plugin.Text
-			for i := 0; i < 4; i++ {
+			for i := range 4 {
 				if s, ok := lst.Items[i].(nbt.String); ok {
 					lines[i] = plugin.Plain(string(s))
 				}
@@ -596,7 +597,7 @@ func (we *WorldEdit) ParseContextFor(actor plugin.CommandSender, w plugin.World,
 				}
 			}
 		}
-		for slot := 0; slot < 9; slot++ {
+		for slot := range 9 {
 			st := inv.Item(slot)
 			if st.Empty() {
 				continue

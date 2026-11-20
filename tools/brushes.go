@@ -7,6 +7,7 @@ import (
 	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -185,7 +186,7 @@ func (b *BrushTool) resolveTarget(ctx core.ToolContext) (plugin.BlockPos, bool) 
 	return p, true
 }
 
-func (b *BrushTool) runAction(ctx core.ToolContext, act *BrushSettings, isLeft bool) bool {
+func (b *BrushTool) runAction(ctx core.ToolContext, act *BrushSettings, isLeft bool) bool { //nolint:funlen // one switch over the brush kinds reads better whole
 	if ctx.Sneaking && len(act.Points) > 0 {
 		act.Points = nil
 		ctx.WE.Msgs.InfoKey(ctx.Player, "fawe.worldedit.brush.brush.reset")
@@ -242,7 +243,7 @@ func (b *BrushTool) runAction(ctx core.ToolContext, act *BrushSettings, isLeft b
 		h := max(1, act.Height)
 		r2 := (float64(size) + 0.5) * (float64(size) + 0.5)
 		inner2 := (float64(size) - 0.5) * (float64(size) - 0.5)
-		for dy := 0; dy < h; dy++ {
+		for dy := range h {
 			for dz := -size; dz <= size; dz++ {
 				for dx := -size; dx <= size; dx++ {
 					d2 := float64(dx*dx + dz*dz)
@@ -413,7 +414,7 @@ func (b *BrushTool) runAction(ctx core.ToolContext, act *BrushSettings, isLeft b
 
 	case BrushShatter:
 		lines := max(4, act.Iterations)
-		for i := 0; i < lines; i++ {
+		for range lines {
 			ang := rand.Float64() * 2 * math.Pi
 			end := plugin.BlockPos{
 				X: pos.X + int(math.Round(math.Cos(ang)*float64(size))),
@@ -818,10 +819,10 @@ func SmoothRegion(es *core.EditSession, r region.Region, iterations int, snowLay
 	w, l := hi.X-lo.X+1, hi.Z-lo.Z+1
 	heights := make([][]float64, w)
 	topBlocks := make([][]plugin.BlockState, w)
-	for x := 0; x < w; x++ {
+	for x := range w {
 		heights[x] = make([]float64, l)
 		topBlocks[x] = make([]plugin.BlockState, l)
-		for z := 0; z < l; z++ {
+		for z := range l {
 			h := float64(lo.Y - 1)
 			var top plugin.BlockState
 			for y := hi.Y; y >= lo.Y; y-- {
@@ -838,9 +839,9 @@ func SmoothRegion(es *core.EditSession, r region.Region, iterations int, snowLay
 	}
 	for it := 0; it < max(1, iterations); it++ {
 		next := make([][]float64, w)
-		for x := 0; x < w; x++ {
+		for x := range w {
 			next[x] = make([]float64, l)
-			for z := 0; z < l; z++ {
+			for z := range l {
 				sum, cnt := 0.0, 0.0
 				for dx := -1; dx <= 1; dx++ {
 					for dz := -1; dz <= 1; dz++ {
@@ -866,8 +867,8 @@ func SmoothRegion(es *core.EditSession, r region.Region, iterations int, snowLay
 	}
 	air, _ := block.ParseState("air", false)
 	start := es.Changed()
-	for x := 0; x < w; x++ {
-		for z := 0; z < l; z++ {
+	for x := range w {
+		for z := range l {
 			if topBlocks[x][z] == 0 {
 				continue
 			}
@@ -949,7 +950,7 @@ func ErodeTerrain(es *core.EditSession, center plugin.BlockPos, radius, erodeFac
 	air, _ := block.ParseState("air", false)
 	dirs := [6]plugin.BlockPos{{X: 1}, {X: -1}, {Y: 1}, {Y: -1}, {Z: 1}, {Z: -1}}
 	r2 := (float64(radius) + 0.5) * (float64(radius) + 0.5)
-	for it := 0; it < erodeIter; it++ {
+	for range erodeIter {
 		var toRemove []plugin.BlockPos
 		for dy := -radius; dy <= radius; dy++ {
 			for dz := -radius; dz <= radius; dz++ {
@@ -977,7 +978,7 @@ func ErodeTerrain(es *core.EditSession, center plugin.BlockPos, radius, erodeFac
 			es.SetBlock(p, air)
 		}
 	}
-	for it := 0; it < fillIter; it++ {
+	for range fillIter {
 		type fill struct {
 			p  plugin.BlockPos
 			st plugin.BlockState
@@ -1163,7 +1164,9 @@ func SimulateSnow(es *core.EditSession, center plugin.BlockPos, radius int, stac
 			} else if name == "minecraft:snow" && stack {
 				props := registry.StateProps(uint16(topSt))
 				layers := 1
-				fmt.Sscanf(props["layers"], "%d", &layers)
+				if n, err := strconv.Atoi(props["layers"]); err == nil {
+					layers = n
+				}
 				if layers < 8 {
 					if next, err := block.ParseState(fmt.Sprintf("minecraft:snow[layers=%d]", layers+1), false); err == nil {
 						es.SetBlock(topPos, next)

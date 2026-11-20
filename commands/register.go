@@ -164,14 +164,12 @@ func (r *Router) Add(spec CmdSpec) {
 		Usage:       sp.Usage,
 		// No Permission here: golem would answer a denied player with "Unknown or
 		// incomplete command"; Execute sends FAWE's "lacking the permission node".
-		Node: plugin.Node{
-			Run: run,
-			Children: []plugin.Node{
-				{
-					Arg:     plugin.GreedyArg("args"),
-					Run:     run,
-					Suggest: sp.Suggest,
-				},
+		Run: run,
+		Children: []plugin.Node{
+			{
+				Arg:     plugin.GreedyArg("args"),
+				Run:     run,
+				Suggest: sp.Suggest,
 			},
 		},
 	}
@@ -363,7 +361,7 @@ func isFlagStart(b byte) bool {
 
 // --- General & /worldedit (/we /fawe) commands ---
 
-func (r *Router) registerGeneral() {
+func (r *Router) registerGeneral() { //nolint:funlen // a command table reads better whole
 	r.Add(CmdSpec{
 		Name:        "worldedit",
 		Aliases:     []string{"we", "fawe", "fastasyncworldedit", "/worldedit", "/we", "/fawe"},
@@ -721,7 +719,7 @@ func (r *Router) registerGeneral() {
 			case "tag", "tags", "blocktag":
 				items = registry.BlockTagNames()
 			case "biome", "biomes":
-				for i := registry.Biome(0); i < registry.BiomeCount; i++ {
+				for i := range registry.Biome(registry.BiomeCount) {
 					if n := i.Name(); n != "" {
 						items = append(items, n)
 					}

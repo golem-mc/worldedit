@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (r *Router) registerHistory() {
+func (r *Router) registerHistory() { //nolint:funlen // a command table reads better whole
 	r.Add(CmdSpec{
 		Name:        "undo",
 		Aliases:     []string{"/undo"},

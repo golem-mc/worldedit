@@ -15,7 +15,7 @@ import (
 	"github.com/golem-mc/worldedit/tools"
 )
 
-func (r *Router) registerUtility() {
+func (r *Router) registerUtility() { //nolint:funlen // a command table reads better whole
 	fillCmd := func(recursive bool) func(*CmdContext) error {
 		return func(ctx *CmdContext) error {
 			if len(ctx.Args) < 2 {
@@ -610,7 +610,7 @@ func (r *Router) registerUtility() {
 				return fmt.Errorf("usage: //macro <cmd1; cmd2; ...>")
 			}
 			raw := strings.Join(ctx.Args, " ")
-			for _, part := range strings.Split(raw, ";") {
+			for part := range strings.SplitSeq(raw, ";") {
 				part = strings.TrimSpace(part)
 				if part == "" {
 					continue
@@ -639,7 +639,7 @@ func (r *Router) registerUtility() {
 		ctx.Session.SetLastScript(clean, scriptArgs)
 		// Execute line-by-line command scripts (lines starting with # or // are comments/commands)
 		ran := 0
-		for _, line := range strings.Split(string(data), "\n") {
+		for line := range strings.SplitSeq(string(data), "\n") {
 			line = strings.TrimSpace(line)
 			if line == "" || strings.HasPrefix(line, "#") {
 				continue
