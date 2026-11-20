@@ -162,7 +162,8 @@ func (r *Router) Add(spec CmdSpec) {
 		Aliases:     aliases,
 		Description: sp.Description,
 		Usage:       sp.Usage,
-		Permission:  sp.Permission,
+		// No Permission here: golem would answer a denied player with "Unknown or
+		// incomplete command"; Execute sends FAWE's "lacking the permission node".
 		Node: plugin.Node{
 			Run: run,
 			Children: []plugin.Node{
