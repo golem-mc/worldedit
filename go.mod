@@ -3,7 +3,7 @@ module github.com/golem-mc/worldedit
 go 1.27.4
 
 require (
-	github.com/golem-mc/golem v0.0.0-20261120233601-465ac52ea466
+	github.com/golem-mc/golem v0.0.0-20261121035345-70ebeaa8921f
 	github.com/google/uuid v1.6.0
 	github.com/pierrec/lz4/v4 v4.1.33
 	go.yaml.in/yaml/v4 v4.0.0
@@ -12,7 +12,7 @@ require (
 
 require (
 	github.com/dustin/go-humanize v1.1.0 // indirect
-	github.com/klauspost/compress v1.20.4 // indirect
+	github.com/klauspost/compress v1.20.5 // indirect
 	github.com/magiconair/properties v1.18.13 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect
