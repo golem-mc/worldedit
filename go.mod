@@ -3,7 +3,7 @@ module github.com/golem-mc/worldedit
 go 1.27.4
 
 require (
-	github.com/golem-mc/golem v0.0.0-20261120153320-5afe811a7821
+	github.com/golem-mc/golem v0.0.0-20261120233601-465ac52ea466
 	github.com/google/uuid v1.6.0
 	github.com/pierrec/lz4/v4 v4.1.33
 	go.yaml.in/yaml/v4 v4.0.0
