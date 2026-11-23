@@ -191,15 +191,13 @@ func (r *Router) registerClipboard() { //nolint:funlen // a command table reads 
 		}
 		skipAir := ctx.Flags['a']
 		pasteEntities := !ctx.Flags['e']
-		n := tools.PasteClipboard(es, cb, holder.Transform, target, skipAir, pasteEntities, useTransform)
+		transform := holder.Transform
+		n := tools.PasteClipboard(es, cb, transform, target, skipAir, pasteEntities, useTransform)
 		if err := es.Commit(); err != nil {
 			return err
 		}
 		if ctx.Flags['s'] {
-			off := cb.Offset()
-			lo := plugin.BlockPos{X: target.X + off.X, Y: target.Y + off.Y, Z: target.Z + off.Z}
-			hi := plugin.BlockPos{X: lo.X + cb.Width - 1, Y: lo.Y + cb.Height - 1, Z: lo.Z + cb.Length - 1}
-			applyModifiedRegion(ctx, region.NewCuboid(lo, hi))
+			applyModifiedRegion(ctx, tools.ClipboardPasteRegion(cb, transform, target, useTransform))
 		}
 		ctx.WE.Msgs.InfoKey(ctx.Sender, "fawe.worldedit.paste.command.paste", fmt.Sprintf("%s (%d blocks)", region.FormatPos(target), n))
 		return nil

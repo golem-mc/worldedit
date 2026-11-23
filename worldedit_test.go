@@ -129,6 +129,34 @@ func TestClipboardRotateFlipAndSchematics(t *testing.T) {
 	env.Expect(env.Run(alice, "/schem delete house_v2"), "deleted")
 }
 
+func TestClipboardPasteSelection(t *testing.T) {
+	env := wetest.Start(t)
+	alice := env.Join("Alice", true)
+
+	// Copy an X row from one block outside it in both horizontal axes.
+	env.Run(alice, "/tp 1.5 70 1.5")
+	env.Expect(env.Run(alice, "//pos1 2,70,2"), "First position set")
+	env.Expect(env.Run(alice, "//pos2 5,70,2"), "Second position set")
+	env.Expect(env.Run(alice, "//set gold_block"), "4 blocks affected")
+	env.Expect(env.Run(alice, "//copy"), "4 blocks were copied")
+	env.Expect(env.Run(alice, "//size -c"), "origin (1, 70, 1)")
+	env.Run(alice, "/tp 8.5 70 8.5")
+
+	env.Expect(env.Run(alice, "//rotate 90"), "rotated")
+	env.Expect(env.Run(alice, "//paste -s"), "(8, 70, 8) (4 blocks)")
+	env.Expect(env.Run(alice, "//size"), "Bounds: (7, 70, 9) -> (7, 70, 12) | Dimensions: 1x1x4")
+	env.Expect(env.Run(alice, "//count gold_block"), "Counted 4 blocks")
+
+	env.Expect(env.Run(alice, "//flip east"), "flipped along the X axis")
+	env.Expect(env.Run(alice, "//paste -s"), "(8, 70, 8) (4 blocks)")
+	env.Expect(env.Run(alice, "//size"), "Bounds: (7, 70, 4) -> (7, 70, 7) | Dimensions: 1x1x4")
+	env.Expect(env.Run(alice, "//count gold_block"), "Counted 4 blocks")
+
+	env.Expect(env.Run(alice, "//place -s"), "(8, 70, 8) (4 blocks)")
+	env.Expect(env.Run(alice, "//size"), "Bounds: (9, 70, 9) -> (12, 70, 9) | Dimensions: 4x1x1")
+	env.Expect(env.Run(alice, "//count gold_block"), "Counted 4 blocks")
+}
+
 func TestGenerationRegionOpsAndUtility(t *testing.T) {
 	env := wetest.Start(t)
 	alice := env.Join("Alice", true)

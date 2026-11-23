@@ -769,11 +769,7 @@ func PasteClipboard(es *core.EditSession, cb *storage.Clipboard, tr storage.Clip
 					rel = tr.TransformOffset(rel)
 					st = tr.TransformBlock(st)
 				}
-				wp := plugin.BlockPos{
-					X: targetPos.X + int(math.Round(rel.X)),
-					Y: targetPos.Y + int(math.Round(rel.Y)),
-					Z: targetPos.Z + int(math.Round(rel.Z)),
-				}
+				wp := clipboardBlockPosition(targetPos, rel)
 				be := cb.BlockEntities[plugin.BlockPos{X: rx, Y: ry, Z: rz}]
 				es.SetBlockWithNBT(wp, st, be)
 			}
@@ -811,6 +807,36 @@ func PasteClipboard(es *core.EditSession, cb *storage.Clipboard, tr storage.Clip
 		}
 	}
 	return es.Changed() - start
+}
+
+func clipboardBlockPosition(targetPos plugin.BlockPos, offset plugin.Vec3) plugin.BlockPos {
+	return plugin.BlockPos{
+		X: targetPos.X + int(math.Round(offset.X)),
+		Y: targetPos.Y + int(math.Round(offset.Y)),
+		Z: targetPos.Z + int(math.Round(offset.Z)),
+	}
+}
+
+// ClipboardPasteRegion returns the bounds of the clipboard at the paste target.
+func ClipboardPasteRegion(cb *storage.Clipboard, tr storage.ClipboardTransform, targetPos plugin.BlockPos, useTransform bool) *region.Cuboid {
+	if !useTransform {
+		tr = storage.ClipboardTransform{}
+	}
+	offset := cb.Offset()
+	lo := plugin.BlockPos{X: math.MaxInt, Y: math.MaxInt, Z: math.MaxInt}
+	hi := plugin.BlockPos{X: math.MinInt, Y: math.MinInt, Z: math.MinInt}
+	// Any corner can become an extremum after rotating the clipboard.
+	for _, x := range [...]int{offset.X, offset.X + cb.Width - 1} {
+		for _, y := range [...]int{offset.Y, offset.Y + cb.Height - 1} {
+			for _, z := range [...]int{offset.Z, offset.Z + cb.Length - 1} {
+				rel := tr.TransformOffset(plugin.Vec3{X: float64(x), Y: float64(y), Z: float64(z)})
+				p := clipboardBlockPosition(targetPos, rel)
+				lo = plugin.BlockPos{X: min(lo.X, p.X), Y: min(lo.Y, p.Y), Z: min(lo.Z, p.Z)}
+				hi = plugin.BlockPos{X: max(hi.X, p.X), Y: max(hi.Y, p.Y), Z: max(hi.Z, p.Z)}
+			}
+		}
+	}
+	return region.NewCuboid(lo, hi)
 }
 
 // SmoothRegion smooths terrain heightmap across r for iterations passes.
